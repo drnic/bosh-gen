@@ -25,9 +25,19 @@ module Bosh::Gen
 
       # Create a deployment manifest (initially for AWS only)
       def create_deployment_manifest
-        cloud_properties = { "instance_type" => "m1.small", "availability_zone" => "us-east-1e" }
-        cloud_properties["persistent_disk"] = flags[:disk] if flags[:disk]
-        cloud_properties["static_ips"] = ip_addresses
+        case flags[:cpi].downcase
+        when "vsphere"
+          security_groups = ["default"]
+          cloud_properties = { "compilation" => { "ram" => 2048, "disk" => 8192, "cpu" => 2 } }
+          cloud_properties["network"] = { "name" => "VLAN_NAME" }
+        when "aws"
+          cloud_properties = { "compilation" => { "instance_type" => "m1.small", "availability_zone" => "us-east-1e" } }
+          cloud_properties["compilation"]["persistent_disk"] = flags[:disk] if flags[:disk]
+          cloud_properties["compilation"]["static_ips"] = ip_addresses if ip_addresses.any?
+          cloud_properties["network"] = { "security_groups" => @security_groups.dup }
+        else
+          raise Thor::Error.new("Unknown CPI: #{flags[:cpi]}")
+        end
         manifest = Bosh::Gen::Models::DeploymentManifest.new(name, director_uuid, release_properties, cloud_properties)
         manifest.jobs = job_manifests
         create_file manifest_file_name, manifest.to_yaml, :force => flags[:force]
