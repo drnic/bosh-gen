@@ -7,7 +7,6 @@ module Bosh::Gen::Models
     def initialize(name, director_uuid, release_properties, cloud_properties)
       @manifest = {}
       @cloud_properties = cloud_properties
-      @security_groups = ["default"]
       @stemcell_version = "0.5.1"
       @stemcell = { "name" => "bosh-stemcell", "version" => @stemcell_version }
       @persistent_disk = cloud_properties.delete("persistent_disk").to_i
@@ -19,7 +18,7 @@ module Bosh::Gen::Models
       manifest["compilation"] = {
         "workers" => 10,
         "network" => "default",
-        "cloud_properties" => cloud_properties.dup
+        "cloud_properties" => cloud_properties["compilation"].dup
       }
       manifest["update"] = {
         "canaries" => 1,
@@ -32,12 +31,12 @@ module Bosh::Gen::Models
         {
           "name" => "default",
           "type" => "dynamic",
-          "cloud_properties" => { "security_groups" => @security_groups.dup }
+          "cloud_properties" => YAML.load(YAML.dump(cloud_properties["network"])) # Deep copy issue, is there a better way to do this?
         },
         {
           "name" => "vip_network",
           "type" => "vip",
-          "cloud_properties" => { "security_groups" => @security_groups.dup }
+          "cloud_properties" => YAML.load(YAML.dump(cloud_properties["network"])) # Deep copy issue, is there a better way to do this?
         }
       ]
       manifest["resource_pools"] = [
@@ -46,7 +45,7 @@ module Bosh::Gen::Models
           "network" => "default",
           "size" => 0,
           "stemcell" => @stemcell,
-          "cloud_properties" => cloud_properties.dup
+          "cloud_properties" => cloud_properties["compilation"].dup
         }
       ]
       manifest["resource_pools"].first["persistent_disk"] = @persistent_disk if @persistent_disk > 0
