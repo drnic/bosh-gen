@@ -27,14 +27,15 @@ module Bosh::Gen
       def create_deployment_manifest
         case flags[:cpi].downcase
         when "vsphere"
-          security_groups = ["default"]
           cloud_properties = { "compilation" => { "ram" => 2048, "disk" => 8192, "cpu" => 2 } }
           cloud_properties["network"] = { "name" => "VLAN_NAME" }
+          cloud_properties["compilation"]["static"] = ip_addresses.dup if ip_addresses.any?
         when "aws"
+          security_groups = ["default"]
           cloud_properties = { "compilation" => { "instance_type" => "m1.small", "availability_zone" => "us-east-1e" } }
           cloud_properties["compilation"]["persistent_disk"] = flags[:disk] if flags[:disk]
-          cloud_properties["compilation"]["static_ips"] = ip_addresses if ip_addresses.any?
-          cloud_properties["network"] = { "security_groups" => @security_groups.dup }
+          cloud_properties["compilation"]["static_ips"] = ip_addresses.dup if ip_addresses.any?
+          cloud_properties["network"] = { "security_groups" => security_groups.dup } if security_groups.any?
         else
           raise Thor::Error.new("Unknown CPI: #{flags[:cpi]}")
         end

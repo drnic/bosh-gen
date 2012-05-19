@@ -18,7 +18,7 @@ module Bosh::Gen::Models
       manifest["compilation"] = {
         "workers" => 10,
         "network" => "default",
-        "cloud_properties" => cloud_properties["compilation"].dup
+        "cloud_properties" => YAML.load(YAML.dump(cloud_properties["compilation"]))
       }
       manifest["update"] = {
         "canaries" => 1,
@@ -31,12 +31,12 @@ module Bosh::Gen::Models
         {
           "name" => "default",
           "type" => "dynamic",
-          "cloud_properties" => YAML.load(YAML.dump(cloud_properties["network"])) # Deep copy issue, is there a better way to do this?
+          "cloud_properties" => YAML.load(YAML.dump(cloud_properties["network"]))
         },
         {
           "name" => "vip_network",
           "type" => "vip",
-          "cloud_properties" => YAML.load(YAML.dump(cloud_properties["network"])) # Deep copy issue, is there a better way to do this?
+          "cloud_properties" => YAML.load(YAML.dump(cloud_properties["network"]))
         }
       ]
       manifest["resource_pools"] = [
@@ -45,7 +45,7 @@ module Bosh::Gen::Models
           "network" => "default",
           "size" => 0,
           "stemcell" => @stemcell,
-          "cloud_properties" => cloud_properties["compilation"].dup
+          "cloud_properties" => YAML.load(YAML.dump(cloud_properties["compilation"]))
         }
       ]
       manifest["resource_pools"].first["persistent_disk"] = @persistent_disk if @persistent_disk > 0
