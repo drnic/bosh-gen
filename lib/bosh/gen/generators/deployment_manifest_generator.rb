@@ -29,17 +29,19 @@ module Bosh::Gen
         when "vsphere"
           cloud_properties = { "compilation" => { "ram" => 2048, "disk" => 8192, "cpu" => 2 } }
           cloud_properties["network"] = { "name" => "VLAN_NAME" }
-          cloud_properties["compilation"]["static"] = ip_addresses.dup if ip_addresses.any?
+          cloud_properties["network"]["static"] = ip_addresses.dup if ip_addresses.any?
+          options = {"cpi" => "vsphere", "stemcell_version" => "0.5.2"}
         when "aws"
           security_groups = ["default"]
           cloud_properties = { "compilation" => { "instance_type" => "m1.small", "availability_zone" => "us-east-1e" } }
           cloud_properties["compilation"]["persistent_disk"] = flags[:disk] if flags[:disk]
           cloud_properties["compilation"]["static_ips"] = ip_addresses.dup if ip_addresses.any?
           cloud_properties["network"] = { "security_groups" => security_groups.dup } if security_groups.any?
+          options = {"cpi" => "aws", "stemcell_version" => "0.5.1"}
         else
           raise Thor::Error.new("Unknown CPI: #{flags[:cpi]}")
         end
-        manifest = Bosh::Gen::Models::DeploymentManifest.new(name, director_uuid, release_properties, cloud_properties)
+        manifest = Bosh::Gen::Models::DeploymentManifest.new(name, director_uuid, release_properties, cloud_properties, options)
         manifest.jobs = job_manifests
         create_file manifest_file_name, manifest.to_yaml, :force => flags[:force]
       end

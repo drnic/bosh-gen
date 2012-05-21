@@ -4,11 +4,12 @@ module Bosh::Gen::Models
   class DeploymentManifest
     attr_reader :manifest
     
-    def initialize(name, director_uuid, release_properties, cloud_properties)
+    default_options = {"cpi" => "aws", "stemcell_version" => "0.5.1"}
+    
+    def initialize(name, director_uuid, release_properties, cloud_properties, options=default_options)
       @manifest = {}
       @cloud_properties = cloud_properties
-      @stemcell_version = "0.5.1"
-      @stemcell = { "name" => "bosh-stemcell", "version" => @stemcell_version }
+      @stemcell = { "name" => "bosh-stemcell", "version" => options["stemcell_version"] }
       @persistent_disk = cloud_properties.delete("persistent_disk").to_i
       @static_ips = cloud_properties.delete("static_ips") || []
       
@@ -27,6 +28,7 @@ module Bosh::Gen::Models
         "max_in_flight" => 4,
         "max_errors" => 1
       }
+      
       manifest["networks"] = [
         {
           "name" => "default",
