@@ -11,8 +11,8 @@ module Bosh::Gen::Models
       @cloud_properties = cloud_properties
       @stemcell = { "name" => "bosh-stemcell", "version" => options["stemcell_version"] }
       @persistent_disk = cloud_properties.delete("persistent_disk").to_i
-      @static_ips = cloud_properties.delete("static_ips") || []
-      
+      @static_ips = cloud_properties["static"] || []
+
       manifest["name"] = name
       manifest["director_uuid"] = director_uuid
       manifest["release"] = release_properties.dup
