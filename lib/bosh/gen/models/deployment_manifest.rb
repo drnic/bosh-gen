@@ -4,22 +4,23 @@ module Bosh::Gen::Models
   class DeploymentManifest
     attr_reader :manifest
     
-    def initialize(name, director_uuid, release_properties, cloud_properties)
+    default_options = {:cpi => "aws", :stemcell_version => "0.5.1", :workers => 10 }
+    
+    def initialize(name, director_uuid, release_properties, cloud_properties, options=default_options)
       @manifest = {}
       @cloud_properties = cloud_properties
-      @security_groups = ["default"]
-      @stemcell_version = "0.5.1"
-      @stemcell = { "name" => "bosh-stemcell", "version" => @stemcell_version }
+      @stemcell = { "name" => "bosh-stemcell", "version" => options[:stemcell_version] }
       @persistent_disk = cloud_properties.delete("persistent_disk").to_i
-      @static_ips = cloud_properties.delete("static_ips") || []
-      
+      @static_ips = cloud_properties["static"]["addresses"] || []
+      @options = options
+
       manifest["name"] = name
       manifest["director_uuid"] = director_uuid
       manifest["release"] = release_properties.dup
       manifest["compilation"] = {
-        "workers" => 10,
+        "workers" => options[:workers],
         "network" => "default",
-        "cloud_properties" => cloud_properties.dup
+        "cloud_properties" => YAML.load(YAML.dump(cloud_properties["compilation"]))
       }
       manifest["update"] = {
         "canaries" => 1,
@@ -28,25 +29,40 @@ module Bosh::Gen::Models
         "max_in_flight" => 4,
         "max_errors" => 1
       }
-      manifest["networks"] = [
-        {
+      
+      if options[:cpi] == "aws"
+        manifest["networks"] = [
+          {
+            "name" => "default",
+            "type" => "dynamic",
+            "cloud_properties" => YAML.load(YAML.dump(cloud_properties["network"]))
+          },
+          {
+            "name" => "vip_network",
+            "type" => "vip",
+            "cloud_properties" => YAML.load(YAML.dump(cloud_properties["network"]))
+          }
+        ]
+      elsif options[:cpi] == "vsphere"
+        manifest["networks"] = [
           "name" => "default",
-          "type" => "dynamic",
-          "cloud_properties" => { "security_groups" => @security_groups.dup }
-        },
-        {
-          "name" => "vip_network",
-          "type" => "vip",
-          "cloud_properties" => { "security_groups" => @security_groups.dup }
-        }
-      ]
+          "subnets" => [
+            "static" => cloud_properties["static"]["addresses"].dup,
+            "range" => cloud_properties["static"]["range"].dup,
+            "gateway" => cloud_properties["static"]["gateway"].dup,
+            "dns" => cloud_properties["static"]["dns"].dup,
+            "cloud_properties" => cloud_properties["network"].dup
+          ]
+        ]
+      end
+      
       manifest["resource_pools"] = [
         {
           "name" => "common",
           "network" => "default",
           "size" => 0,
           "stemcell" => @stemcell,
-          "cloud_properties" => cloud_properties.dup
+          "cloud_properties" => YAML.load(YAML.dump(cloud_properties["compilation"]))
         }
       ]
       manifest["resource_pools"].first["persistent_disk"] = @persistent_disk if @persistent_disk > 0
@@ -70,20 +86,42 @@ module Bosh::Gen::Models
           "template" => job["template"] || job["name"],
           "instances" => job_instances,
           "resource_pool" => "common",
-          "networks" => [
+        }
+        
+        # Setup networking specific to AWS
+        if @options[:cpi] == "aws"
+          manifest_job["networks"] = [
             {
               "name" => "default",
               "default" => %w[dns gateway]
             }
           ]
-        }
-        if static_ips.length > 0
-          job_ips, static_ips = static_ips[0..job_instances-1], static_ips[job_instances..-1]
-          manifest_job["networks"] << {
-            "name" => "vip_network",
-            "static_ips" => job_ips
-          }
+        
+          if static_ips.length > 0
+            job_ips, static_ips = static_ips[0..job_instances-1], static_ips[job_instances..-1]
+            manifest_job["networks"] << {
+              "name" => "vip_network",
+              "static_ips" => job_ips
+            }
+          end
+        elsif @options[:cpi] == "vsphere"
+          manifest_job["networks"] = [
+            {
+              "name" => "default"
+            }
+          ]
+          if static_ips.length > 0
+            job_ips, static_ips = static_ips[0..job_instances-1], static_ips[job_instances..-1]
+            manifest_job["networks"] = [
+              {
+                "name" => "default",
+                "static_ips" => job_ips
+              }
+            ]
+          end
         end
+        
+        
         manifest_job["persistent_disk"] = @persistent_disk if @persistent_disk > 0
         manifest["jobs"] << manifest_job
       end
