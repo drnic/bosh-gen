@@ -78,9 +78,12 @@ module Bosh
 
       desc "manifest NAME PATH UUID", "Creates a deployment manifest based on the release located at PATH"
       method_option :force, :type => :boolean, :desc => "Force override existing target manifest file"
-      method_option :addresses, :aliases => ['-a'], :type => :array, :desc => "List of IP addresses available for jobs"
-      method_option :disk, :aliases => ['-d'], :type => :string, :desc => "Attach persistent disks to VMs of specific size, e.g. 8196"
       method_option :cpi, :aliases => ['-c'], :type => :string, :desc => "Specify the CPI fields to be generated, e.g. \"aws\" or \"vsphere\""
+      method_option :disk, :aliases => ['-d'], :type => :string, :desc => "Attach persistent disks to VMs of specific size, e.g. 8196"
+      method_option :addresses, :aliases => ['-a'], :type => :array, :desc => "List of IP addresses available for jobs"
+      method_option :range, :aliases => ['-r'], :type => :string, :desc => "IP Netmask"
+      method_option :gateway, :aliases => ['-g'], :type => :string, :desc => "IP Gateway"
+      method_option :dns, :aliases => ['-n'], :type => :array, :desc => "DNS Servers"
       def manifest(name, release_path, uuid)
         release_path = File.expand_path(release_path)
         ip_addresses = options["addresses"] || []
