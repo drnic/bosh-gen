@@ -84,6 +84,7 @@ module Bosh
       method_option :range, :aliases => ['-r'], :type => :string, :desc => "IP Netmask"
       method_option :gateway, :aliases => ['-g'], :type => :string, :desc => "IP Gateway"
       method_option :dns, :aliases => ['-n'], :type => :array, :desc => "DNS Servers"
+      method_option :workers, :aliases => ['-w'], :type => :numeric, :desc => "Number of worker VMs to spawn when compiling packages"
       def manifest(name, release_path, uuid)
         release_path = File.expand_path(release_path)
         ip_addresses = options["addresses"] || []
@@ -93,7 +94,8 @@ module Bosh
           :cpi => options["cpi"] || "aws", 
           :range =>  options[:range] || "", 
           :gateway => options[:gateway] || "",
-          :dns => options[:dns] || []
+          :dns => options[:dns] || [],
+          :workers => options[:workers] || 10
         }
         require 'bosh/gen/generators/deployment_manifest_generator'
         Bosh::Gen::Generators::DeploymentManifestGenerator.start([name, release_path, uuid, ip_addresses, flags])

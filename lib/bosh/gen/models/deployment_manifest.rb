@@ -4,7 +4,7 @@ module Bosh::Gen::Models
   class DeploymentManifest
     attr_reader :manifest
     
-    default_options = {:cpi => "aws", :stemcell_version => "0.5.1"}
+    default_options = {:cpi => "aws", :stemcell_version => "0.5.1", :workers => 10 }
     
     def initialize(name, director_uuid, release_properties, cloud_properties, options=default_options)
       @manifest = {}
@@ -18,7 +18,7 @@ module Bosh::Gen::Models
       manifest["director_uuid"] = director_uuid
       manifest["release"] = release_properties.dup
       manifest["compilation"] = {
-        "workers" => 10,
+        "workers" => options[:workers],
         "network" => "default",
         "cloud_properties" => YAML.load(YAML.dump(cloud_properties["compilation"]))
       }

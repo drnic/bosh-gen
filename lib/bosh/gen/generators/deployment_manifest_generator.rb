@@ -33,17 +33,17 @@ module Bosh::Gen
           cloud_properties["static"]["range"] = flags[:range].dup || ""
           cloud_properties["static"]["gateway"] = flags[:gateway].dup || ""
           cloud_properties["static"]["dns"] = flags[:dns].dup || []
-          options = {:cpi => "vsphere", :stemcell_version => "0.5.2"}
+          options = {:cpi => "vsphere", :stemcell_version => "0.5.2", :workers => flags[:workers]}
         when "aws"
           security_groups = ["default"]
           cloud_properties = { "compilation" => { "instance_type" => "m1.small", "availability_zone" => "us-east-1e" } }
           cloud_properties["compilation"]["persistent_disk"] = flags[:disk] if flags[:disk]
           cloud_properties["static"] = { "addresses" => ip_addresses.dup }
           cloud_properties["network"] = { "security_groups" => security_groups.dup } if security_groups.any?
-          options = {:cpi => "aws", :stemcell_version => "0.5.1"}
+          options = {:cpi => "aws", :stemcell_version => "0.5.1", :workers => flags[:workers]}
         else
           raise Thor::Error.new("Unknown CPI: #{flags[:cpi]}")
-        end
+        end      
         manifest = Bosh::Gen::Models::DeploymentManifest.new(name, director_uuid, release_properties, cloud_properties, options)
         manifest.jobs = job_manifests
         create_file manifest_file_name, manifest.to_yaml, :force => flags[:force]
