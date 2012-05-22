@@ -28,12 +28,12 @@ module Bosh::Gen
         case flags[:cpi].downcase
         when "vsphere"
           cloud_properties = { "compilation" => { "ram" => 2048, "disk" => 8192, "cpu" => 2 } }
-          cloud_properties["network"] = { "name" => "VLAN_NAME" }
+          cloud_properties["network"] = { "name" => flags[:network].dup }
           cloud_properties["static"] = { "addresses" => ip_addresses.dup }
           cloud_properties["static"]["range"] = flags[:range].dup || ""
           cloud_properties["static"]["gateway"] = flags[:gateway].dup || ""
           cloud_properties["static"]["dns"] = flags[:dns].dup || []
-          options = {:cpi => "vsphere", :stemcell_version => "0.5.2", :workers => flags[:workers]}
+          options = {:cpi => "vsphere", :stemcell_version => "0.5.2", :workers => flags[:workers], :network => flags[:network]}
         when "aws"
           security_groups = ["default"]
           cloud_properties = { "compilation" => { "instance_type" => "m1.small", "availability_zone" => "us-east-1e" } }

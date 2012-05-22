@@ -83,8 +83,9 @@ module Bosh
       method_option :addresses, :aliases => ['-a'], :type => :array, :desc => "List of IP addresses available for jobs"
       method_option :range, :aliases => ['-r'], :type => :string, :desc => "IP Netmask"
       method_option :gateway, :aliases => ['-g'], :type => :string, :desc => "IP Gateway"
-      method_option :dns, :aliases => ['-n'], :type => :array, :desc => "DNS Servers"
+      method_option :dns, :type => :array, :desc => "DNS Servers"
       method_option :workers, :aliases => ['-w'], :type => :numeric, :desc => "Number of worker VMs to spawn when compiling packages"
+      method_option :network, :aliases => ['-n'], :type => :string, :desc => "[vSphere Only] Network to bind VMs to"
       def manifest(name, release_path, uuid)
         release_path = File.expand_path(release_path)
         ip_addresses = options["addresses"] || []
@@ -95,7 +96,8 @@ module Bosh
           :range =>  options[:range] || "", 
           :gateway => options[:gateway] || "",
           :dns => options[:dns] || [],
-          :workers => options[:workers] || 10
+          :workers => options[:workers] || 10,
+          :network => options[:network] || "NETWORK_NAME"
         }
         require 'bosh/gen/generators/deployment_manifest_generator'
         Bosh::Gen::Generators::DeploymentManifestGenerator.start([name, release_path, uuid, ip_addresses, flags])
