@@ -29,15 +29,18 @@ module Bosh::Gen
         when "vsphere"
           cloud_properties = { "compilation" => { "ram" => 2048, "disk" => 8192, "cpu" => 2 } }
           cloud_properties["network"] = { "name" => "VLAN_NAME" }
-          cloud_properties["static"] = ip_addresses.dup if ip_addresses.any?
-          options = {"cpi" => "vsphere", "stemcell_version" => "0.5.2"}
+          cloud_properties["static"] = { "addresses" => ip_addresses.dup }
+          cloud_properties["static"]["range"] = flags[:range].dup || ""
+          cloud_properties["static"]["gateway"] = flags[:gateway].dup || ""
+          cloud_properties["static"]["dns"] = flags[:dns].dup || []
+          options = {:cpi => "vsphere", :stemcell_version => "0.5.2"}
         when "aws"
           security_groups = ["default"]
           cloud_properties = { "compilation" => { "instance_type" => "m1.small", "availability_zone" => "us-east-1e" } }
           cloud_properties["compilation"]["persistent_disk"] = flags[:disk] if flags[:disk]
           cloud_properties["static"] = ip_addresses.dup if ip_addresses.any?
           cloud_properties["network"] = { "security_groups" => security_groups.dup } if security_groups.any?
-          options = {"cpi" => "aws", "stemcell_version" => "0.5.1"}
+          options = {:cpi => "aws", :stemcell_version => "0.5.1"}
         else
           raise Thor::Error.new("Unknown CPI: #{flags[:cpi]}")
         end
