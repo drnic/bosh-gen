@@ -87,7 +87,14 @@ module Bosh
       def manifest(name, release_path, uuid)
         release_path = File.expand_path(release_path)
         ip_addresses = options["addresses"] || []
-        flags = { :force => options["force"] || false, :disk => options[:disk], :cpi => options["cpi"] || "aws" }
+        flags = { 
+          :force => options["force"] || false, 
+          :disk => options[:disk], 
+          :cpi => options["cpi"] || "aws", 
+          :range =>  options[:range] || "", 
+          :gateway => options[:gateway] || "",
+          :dns => options[:dns] || []
+        }
         require 'bosh/gen/generators/deployment_manifest_generator'
         Bosh::Gen::Generators::DeploymentManifestGenerator.start([name, release_path, uuid, ip_addresses, flags])
       end
