@@ -46,7 +46,7 @@ module Bosh::Gen
         when :local
           config_private = { 
             "blobstore" => {
-              "simple" => {
+              "local" => {
                 "user" => "USER",
                 "password" => "PASSWORD"
               }
