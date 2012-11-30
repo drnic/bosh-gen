@@ -30,14 +30,17 @@ module Bosh
       desc "package NAME", "Create a new package"
       method_option :dependencies, :aliases => ['-d'], :type => :array, 
         :desc => "List of package dependencies"
-      method_option :files,        :aliases => ['-f', '--src'], :type => :array, 
+      method_option :files,        :aliases => ['-f'], :type => :array, 
         :desc => "List of files copy into release"
+      method_option :src,        :aliases => ['-s'], :type => :array,
+        :desc => "List of existing sources to use, e.g. --src 'myapp/**/*'"
       def package(name)
         dependencies = options[:dependencies] || []
         files        = options[:files] || []
+        sources      = options[:src] || []
         require 'bosh/gen/generators/package_generator'
         Bosh::Gen::Generators::PackageGenerator.start(
-          [name, dependencies, files])
+          [name, dependencies, files, sources])
       end
       
       desc "source NAME", "Downloads a source item into the named project"
@@ -71,10 +74,13 @@ module Bosh
         Bosh::Gen::Generators::JobGenerator.start([name, dependencies, 'simple'])
       end
 
-      desc "micro", "Create a micro job - a collection of all jobs and packages"
-      def micro
+      desc "micro [JOB]", "Create a micro job - a collection of all jobs and packages"
+      method_option :jobs, :aliases => ['-j'], :type => :array, 
+        :desc => "Ordered list of jobs to include"
+      def micro(job_name = "micro")
+        specific_jobs = options[:jobs] || []
         require 'bosh/gen/generators/micro_job_generator'
-        Bosh::Gen::Generators::MicroJobGenerator.start([])
+        Bosh::Gen::Generators::MicroJobGenerator.start([job_name, specific_jobs])
       end
 
       desc "template JOB FILE_PATH", 
@@ -110,13 +116,16 @@ module Bosh
         :desc => "List of IP addresses available for jobs"
       method_option :disk, :aliases => ['-d'], :type => :string, 
         :desc => "Attach persistent disks to VMs of specific size, e.g. 8196"
+      method_option :jobs, :type => :array,
+        :desc => "Specific jobs to include in manifest [default: all]"
       def manifest(name, release_path)
         release_path = File.expand_path(release_path)
         ip_addresses = options["addresses"] || []
+        job_names = options["jobs"] || []
         flags = { :force => options["force"] || false, :disk => options[:disk] }
         require 'bosh/gen/generators/deployment_manifest_generator'
         Bosh::Gen::Generators::DeploymentManifestGenerator.start(
-          [name, release_path, ip_addresses, flags])
+          [name, release_path, ip_addresses, job_names, flags])
       end
 
       no_tasks do

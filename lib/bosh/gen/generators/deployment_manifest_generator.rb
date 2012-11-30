@@ -10,7 +10,8 @@ module Bosh::Gen
 
       argument :name
       argument :release_path
-      argument :ip_addresses
+      argument :ip_addresses, :type => :array
+      argument :requested_jobs, :type => :array
       argument :flags, :type => :hash
 
       def check_release_path_is_release
@@ -24,11 +25,16 @@ module Bosh::Gen
         end
       end
 
+      def check_valid_requested_jobs
+        if jobs.empty?
+          raise Thor::Error.new("No valid jobs specified from #{detect_jobs.inspect}")
+        end
+      end
+
       # Create a deployment manifest (initially for AWS only)
       def create_deployment_manifest
         cloud_properties = { 
           "instance_type" => "m1.small", 
-          "availability_zone" => "us-east-1e"
         }
         cloud_properties["persistent_disk"] = flags[:disk] if flags[:disk]
         cloud_properties["static_ips"] = ip_addresses
@@ -55,19 +61,26 @@ module Bosh::Gen
       end
       
       def job_manifests
-        jobs = detect_jobs.map do |job_name|
+        jobs.map do |job_name|
           {
             "name" => job_name
           }
         end
-        jobs
       end
       
       # Return list of job names
       def detect_jobs
         release_detector.latest_dev_release_job_names
       end
-      
+
+      def jobs
+        job_names = if !requested_jobs || requested_jobs.size == 0
+          detect_jobs
+        else
+          requested_jobs & detect_jobs
+        end
+      end
+
       # The "release" aspect of the manifest, which has two keys: name, version
       def release_properties
         release_detector.latest_dev_release_properties
@@ -81,7 +94,7 @@ module Bosh::Gen
       #       description: Password for mysql server
       def default_properties
         properties = {}
-        detect_jobs.each do |job_name|
+        jobs.each do |job_name|
           spec = YAML.load_file(File.join(release_path, "jobs", job_name, "spec"))
           if spec_properties = spec["properties"]
             spec_properties.each_pair do |name, definition|
