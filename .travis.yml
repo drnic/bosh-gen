@@ -3,7 +3,6 @@ script: bundle exec rake spec
 rvm:
   - ruby-2.1.9
   - ruby-2.2.5
-:wq
 notifications:
   email:
     recipients:
